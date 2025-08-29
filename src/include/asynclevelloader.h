@@ -127,18 +127,6 @@ class LoadRegionTask : public QObject, public QRunnable {
     const MapFilter *filter_;
 };
 
-// class FreeMemoryTask : public QObject, public QRunnable {
-//
-// public:
-//
-//     explicit FreeMemoryTask(bl::chunk **chunks) : chunks_(chunks) {}
-//
-//     void run() override;
-//
-// private:
-//     bl::chunk **chunks_;
-// };
-
 class AsyncLevelLoader : public QObject {
     Q_OBJECT
 

@@ -82,8 +82,8 @@ int main(int argc, char *argv[]) {
 #ifndef QT_DEBUG
     qInstallMessageHandler(myMessageHandler);
 #endif
-    initResources();
     cfg::initConfig();
+    initResources();
     QApplication a(argc, argv);
     setupTheme(a);
     setupFont(a);

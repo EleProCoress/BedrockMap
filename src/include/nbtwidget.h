@@ -132,7 +132,10 @@ class NbtWidget : public QWidget {
 
     inline bool modifyAllowed() const { return this->modify_allowed_; }
 
-   private slots:
+private slots:
+    void on_print_cache_btn_clicked();
+
+private slots:
 
     void on_load_btn_clicked();
 

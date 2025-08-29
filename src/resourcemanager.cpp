@@ -4,9 +4,11 @@
 
 #include "resourcemanager.h"
 
+#include <qcolor.h>
 #include <qicon.h>
 #include <qimage.h>
 #include <qpixmap.h>
+#include <qrgb.h>
 
 #include <QDir>
 #include <QDirIterator>
@@ -18,6 +20,7 @@
 #include <unordered_map>
 
 #include "bedrock_key.h"
+#include "config.h"
 
 namespace {
     QMap<QString, QImage *> actor_img_pool;
@@ -40,35 +43,31 @@ namespace {
         return icons_;
     }
 
-    QImage *addMask(const QImage &img) {
-        if (img.size() != QSize(16, 16)) {
-            return nullptr;
-        }
-
-        auto *masked = new QImage(18, 18, QImage::Format_RGBA8888);
-        auto conv = [](int x, int z, QImage *mask, const QImage *origin) {
-            int cx = x - 1;
-            int cz = z - 1;
-
-            if (cx >= 0 && cx < 16 && cz >= 0 && cz < 16 && origin->pixelColor(cx, cz).alpha() != 0) {
+    // add a border to the image in the transparent area, the args are the image and the border width, return a new image with the border
+    QImage *addBorder(const QImage &img, int bw) {
+        auto *masked = new QImage(img.width() + bw * 2, img.height() + bw * 2, QImage::Format_RGBA8888);
+        masked->fill(Qt::transparent);  // fill with transparent color
+        auto conv = [bw](int x, int z, QImage *mask, const QImage *origin) {
+            int cx = x - bw;
+            int cz = z - bw;
+            if (cx >= 0 && cx < origin->width() && cz >= 0 && cz < origin->height() && origin->pixelColor(cx, cz).alpha() != 0) {
                 mask->setPixelColor(x, z, origin->pixelColor(cx, cz).rgba());
             } else {
-                int alpha{0};
-                for (int i = -1; i <= 1; i++) {
-                    for (int j = -1; j <= 1; j++) {
-                        //                        范围内有像素
-                        int nx = cx + i;
-                        int nz = cz + j;
-                        if (nx >= 0 && nx < 16 && nz >= 0 && nz < 16 && origin->pixelColor(nx, nz).alpha() != 0) {
-                            alpha = 220;
+                // if current pixel's neighbor pixel is the orignal image's pixel, then set the current pixel to semi-transparent black
+                for (int i = -bw; i <= bw; ++i) {
+                    for (int j = -bw; j <= bw; ++j) {
+                        if (cx + i >= 0 && cx + i < origin->width() && cz + j >= 0 && cz + j < origin->height() &&
+                            origin->pixelColor(cx + i, cz + j).alpha() != 0) {
+                            mask->setPixelColor(x, z, QColor(cfg::ACTOR_BORDER_COLOR.c_str()));
+                            return;
                         }
                     }
                 }
-                mask->setPixelColor(x, z, QColor(0, 0, 0, alpha));
             }
         };
-        for (int i = 0; i < 18; i++) {
-            for (int j = 0; j < 18; j++) {
+        // traverse the image and add a border
+        for (int i = 0; i < masked->width(); i++) {
+            for (int j = 0; j < masked->height(); j++) {
                 conv(i, j, masked, &img);
             }
         }
@@ -96,22 +95,12 @@ void initResources() {
     while (it.hasNext()) {
         auto img = QImage(it.next());
         auto key = it.fileName().replace(".png", "");
-        auto masked = addMask(img);
-        auto scaled = scale2(img);
-        entity_icon_pool[key] = scaled;
+        auto masked = addBorder(img, cfg::ACTOR_BORDER_WIDTH);
+        entity_icon_pool[key] = masked;
         if (masked) {
             actor_img_pool[key] = masked;
         }
     }
-
-    // village icons
-
-    // using vkt = bl::village_key::key_type;
-    // village_icon_pool()[vkt::DWELLERS] = QIcon(QPixmap::fromImage(QImage(":/res/village/dwellers.png")));
-    // village_icon_pool()[vkt::PLAYERS] = QIcon(QPixmap::fromImage(QImage(":/res/village/players.png")));
-    // village_icon_pool()[vkt::INFO] = QIcon(QPixmap::fromImage(QImage(":/res/village/info.png")));
-    // village_icon_pool()[vkt::POI] = QIcon(QPixmap::fromImage(QImage(":/res/village/poi.png")));
-    // village_icon_pool()[vkt::PLAYERS] = QIcon(QPixmap::fromImage(QImage(":/res/village/players.png")));
 
     village_dwellers_nbt = scale2(QImage(":/res/village/dwellers.png"));
     village_players_nbt = scale2(QImage(":/res/village/players.png"));

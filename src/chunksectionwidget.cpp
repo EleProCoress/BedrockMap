@@ -40,10 +40,12 @@ void ChunkSectionWidget::paintEvent(QPaintEvent *event) {
     for (int i = 0; i < 16; i++) {
         for (int j = 0; j < 16; j++) {
             QRect rect(x_start + i * bw, j * bw + z_start, bw, bw);
-            auto c = this->get_layer_data(this->y_level_)[i][j].block_color;
+            auto data = this->get_layer_data(this->y_level_)[i][j];
+            if (data.block_name == "minecraft:air") continue;
+            auto c = data.block_color;
             p.fillRect(rect, QBrush(QColor(c.r, c.g, c.b)));
             p.setPen(pen);
-            p.drawRect(rect);
+            if (draw_grid_) p.drawRect(rect);
 
             // paint info
         }
@@ -55,7 +57,7 @@ void ChunkSectionWidget::paintEvent(QPaintEvent *event) {
             auto c = bl::get_biome_color(this->get_layer_data(this->y_level_)[i][j].biome);
             p.fillRect(rect, QBrush(QColor(c.r, c.g, c.b)));
             p.setPen(pen);
-            p.drawRect(rect);
+            if (draw_grid_) p.drawRect(rect);
         }
     }
 }

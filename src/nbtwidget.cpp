@@ -2,6 +2,7 @@
 
 #include <qaction.h>
 #include <qchar.h>
+#include <qdebug.h>
 #include <qdialog.h>
 #include <qobject.h>
 
@@ -14,6 +15,7 @@
 #include <QString>
 #include <QTreeWidgetItem>
 #include <QtDebug>
+#include <cstdio>
 
 #include "msg.h"
 #include "nbtmodifydialog.h"
@@ -467,5 +469,16 @@ void NbtWidget::putModifyToCache(const std::string &key, const std::string &valu
         qDebug() << "Delete key: " << key.c_str();
     } else {
         qDebug() << "Modify key: " << key.c_str() << " -> Data[" << value.size() << "]";
+    }
+}
+
+void NbtWidget::on_print_cache_btn_clicked() {
+    qDebug() << "Total " << this->modified_cache_.size() << " items in the modify cache:";
+    for (auto &keyval : this->modified_cache_) {
+        if (keyval.second.empty()) {
+            qDebug() << " - Delete key: " << keyval.first.c_str();
+        } else {
+            qDebug() << " - Modify key: " << keyval.first.c_str() << " -> Data[" << keyval.second.size() << "]";
+        }
     }
 }

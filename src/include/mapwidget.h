@@ -89,6 +89,8 @@ class MapWidget : public QWidget {
     // 生成图片
     void saveImageAction(bool full_screen);
 
+    void render3dAction(const bl::chunk_pos &minPos, const bl::chunk_pos &maxPos);
+
     // 前往坐标
     void gotoPositionAction();
 

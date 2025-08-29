@@ -21,8 +21,7 @@ ChunkEditorWidget::ChunkEditorWidget(MainWindow *mw, QWidget *parent) : QWidget(
     ui->terrain_tab->layout()->addWidget(this->chunk_section_);
     ui->terrain_level_slider->setRange(-64, 319);
     ui->terrain_level_slider->setSingleStep(1);
-    ui->terrain_level_edit->setText("0");
-
+    ui->terrain_level_edit->setRange(-64, 319);
     // actor tab
     this->actor_editor_ = new NbtWidget();
     this->pending_tick_editor_ = new NbtWidget();
@@ -123,20 +122,21 @@ void ChunkEditorWidget::refreshBasicData() {
 }
 
 void ChunkEditorWidget::on_terrain_level_slider_valueChanged(int value) {
-    ui->terrain_level_edit->setText(QString::number(ui->terrain_level_slider->value()));
-    auto y = ui->terrain_level_edit->text().toInt();
+    ui->terrain_level_edit->setValue(ui->terrain_level_slider->value());
+    auto y = ui->terrain_level_edit->value();
     this->chunk_section_->setYLevel(y);
+    this->chunk_section_->update();
 }
 
-void ChunkEditorWidget::on_terrain_goto_level_btn_clicked() {
-    auto y = ui->terrain_level_edit->text().toInt();
-    auto [miny, maxy] = this->cp_.get_y_range(this->cv);
-    if (y > maxy) y = maxy;
-    if (y < miny) y = miny;
-    ui->terrain_level_edit->setText(QString::number(y));
-    ui->terrain_level_slider->setValue(y);
-    this->chunk_section_->setYLevel(y);
-}
+// void ChunkEditorWidget::on_terrain_goto_level_btn_clicked() {
+//     auto y = ui->terrain_level_edit->text().toInt();
+//     auto [miny, maxy] = this->cp_.get_y_range(this->cv);
+//     if (y > maxy) y = maxy;
+//     if (y < miny) y = miny;
+//     ui->terrain_level_edit->setValue(7);
+//     ui->terrain_level_slider->setValue(y);
+//     this->chunk_section_->setYLevel(y);
+// }
 
 void ChunkEditorWidget::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton) {
@@ -180,3 +180,15 @@ void ChunkEditorWidget::clearData() {
 }
 
 void ChunkEditorWidget::on_locate_btn_clicked() { this->mw_->mapWidget()->gotoBlockPos(cp_.x * 16 + 8, cp_.z * 16 + 8); }
+
+void ChunkEditorWidget::on_terrain_show_grid_cb_stateChanged(int arg1) {
+    this->chunk_section_->setDrawGrid(ui->terrain_show_grid_cb->isChecked());
+    this->chunk_section_->update();
+}
+
+void ChunkEditorWidget::on_terrain_level_edit_valueChanged(int arg1) {
+    ui->terrain_level_slider->setValue(ui->terrain_level_edit->value());
+    auto y = ui->terrain_level_edit->value();
+    this->chunk_section_->setYLevel(y);
+    this->chunk_section_->update();
+}

@@ -30,12 +30,18 @@ class ChunkEditorWidget : public QWidget {
     void clearData();
 
    private slots:
+    void on_terrain_level_edit_valueChanged(int arg1);
+
+   private slots:
+    void on_terrain_show_grid_cb_stateChanged(int arg1);
+
+   private slots:
 
     void on_close_btn_clicked();
 
     void on_terrain_level_slider_valueChanged(int value);
 
-    void on_terrain_goto_level_btn_clicked();
+    //   void on_terrain_goto_level_btn_clicked();
 
     void on_save_actor_btn_clicked();
 

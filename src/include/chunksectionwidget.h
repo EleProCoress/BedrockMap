@@ -34,12 +34,15 @@ class ChunkSectionWidget : public QWidget {
 
     void showContextMenu(const QPoint &p);
 
+    void setDrawGrid(bool draw_grid){this->draw_grid_ = draw_grid;}
+
    private:
     inline std::array<std::array<TerrainData, 16>, 16> &get_layer_data(int y) { return this->data_[y + 64]; }
 
    signals:
    private:
     int y_level_{0};
+    bool draw_grid_{false};
     std::array<std::array<std::array<TerrainData, 16>, 16>, 384> data_;
 };
 

@@ -1,5 +1,9 @@
 
+#include <qaction.h>
 #include <qimage.h>
+#include <qmainwindow.h>
+#include <qwidget.h>
+#include <qwindowdefs.h>
 
 #include <cstddef>
 #include <map>
@@ -70,13 +74,22 @@ void MapWidget::showContextMenu(const QPoint &p) {
         QAction removeChunkAction("删除区块", this);
         QAction clearAreaAction("取消选中", this);
         QAction screenShotAction("另存为图像", this);
+        QAction renderAreaAction("3D视图", this);
         connect(&clearAreaAction, &QAction::triggered, this, [this] { this->has_selected_ = false; });
         connect(&removeChunkAction, SIGNAL(triggered()), this, SLOT(delete_chunks()));
         connect(&screenShotAction, &QAction::triggered, this, [this] { this->saveImageAction(false); });
+        // connect(&renderAreaAction, &QAction::triggered, this, [this, area] {
+        //     auto minX = std::min(this->select_pos_1_.x, this->select_pos_2_.x);
+        //     auto minZ = std::min(this->select_pos_1_.z, this->select_pos_2_.z);
+        //     auto maxX = std::max(this->select_pos_1_.x, this->select_pos_2_.x);
+        //     auto maxZ = std::max(this->select_pos_1_.z, this->select_pos_2_.z);
+        //     this->render3dAction(bl::chunk_pos(minX, minZ, this->dim_type_), bl::chunk_pos(maxX, maxZ, this->dim_type_));
+        // });
 
         contextMenu.addAction(&clearAreaAction);
         contextMenu.addAction(&screenShotAction);
         contextMenu.addAction(&removeChunkAction);
+        contextMenu.addAction(&renderAreaAction);
         contextMenu.exec(mapToGlobal(p));
     } else {
         auto pos = this->getCursorBlockPos();
@@ -433,8 +446,10 @@ void MapWidget::drawActors(QPaintEvent *event, QPainter *painter) {
 
                     float x = (actor.x - (float)ch.x * 16.0f) * (float)this->BW() + (float)p.x();
                     float y = (actor.z - (float)ch.z * 16.0f) * (float)this->BW() + (float)p.y();
-                    const int W = 18;
-                    painter->drawImage(QRectF(x - W, y - W, W * 2, W * 2), *kv.first, QRect(0, 0, 18, 18));
+                    auto *img = kv.first;
+                    auto w = img->width();
+                    auto h = img->height();
+                    painter->drawImage(QRectF(x - w, y - h, w * 2, h * 2), *img, QRect(0, 0, w, h));
                 }
             }
         } else {  // 仅画第一个
@@ -449,8 +464,10 @@ void MapWidget::drawActors(QPaintEvent *event, QPainter *painter) {
                     auto count = countInfo.count;
                     float x = (pos.x - (float)ch.x * 16.0f) * (float)this->BW() + (float)p.x();
                     float y = (pos.z - (float)ch.z * 16.0f) * (float)this->BW() + (float)p.y();
-                    const int W = 18. * std::log2(count + 1);
-                    painter->drawImage(QRectF(x - W, y - W, W * 2, W * 2), *img, QRect(0, 0, 18, 18));
+                    auto scale = std::log2(count + 1);
+                    auto w = img->width() * scale;
+                    auto h = img->height() * scale;
+                    painter->drawImage(QRectF(x - w, y - h, w * 2, h * 2), *img, QRect(0, 0, img->width(), img->height()));
                 }
             }
         }
@@ -503,6 +520,13 @@ void MapWidget::saveImageAction(bool full_screen) {
     auto fileName = QFileDialog::getSaveFileName(this, tr("Save File"), "/home/jana/untitled.png", tr("Images (*.png *.jpg)"));
     if (fileName.isEmpty()) return;
     new_img.save(fileName);
+}
+
+void MapWidget::render3dAction(const bl::chunk_pos &minPos, const bl::chunk_pos &maxPos) {
+    static QMainWindow mw;
+    mw.setWindowTitle("3D Render");
+    mw.resize(800, 600);
+    mw.show();
 }
 
 void MapWidget::delete_chunks() {

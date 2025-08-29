@@ -24,7 +24,7 @@ namespace {
 
 // 软件基本信息
 const std::string cfg::SOFTWARE_NAME = "BedrockMap";
-const std::string cfg::SOFTWARE_VERSION = "v0.4.0";
+const std::string cfg::SOFTWARE_VERSION = "v0.5.0";
 // 不可配置的
 const int cfg::GRID_WIDTH = 32;
 // 配置文件下面是可配置的(都有默认值)
@@ -42,7 +42,8 @@ std::string cfg::COLOR_THEME = "developing";
 int cfg::FONT_SIZE = 10;
 std::string cfg::GRID_LINE_COLOR = "#bbbbbb";
 int cfg::ACTOR_RENDER_STYLE = 0;  // 0: 渲染每一个实体；1:一个区块内每种实体仅渲染一次
-
+int cfg::ACTOR_BORDER_WIDTH = 2;  // 图标边框宽度
+std::string cfg::ACTOR_BORDER_COLOR = "#ff000000";
 // 运行时可变的
 bool cfg::transparent_void = false;
 
@@ -137,8 +138,9 @@ void cfg::initConfig() {
             cfg::OPEN_NBT_EDITOR_ONLY = j["nbt_editor_mode"].get<bool>();
             cfg::GRID_LINE_COLOR = j["grid_line_color"].get<std::string>();
             cfg::ACTOR_RENDER_STYLE = j["actor_render_style"].get<int>();
+            cfg::ACTOR_BORDER_WIDTH = j["actor_border_width"].get<int>();
+            cfg::ACTOR_BORDER_COLOR = j["actor_border_color"].get<std::string>();
         }
-
     } catch (std::exception &e) {
         qCritical() << "Invalid config file format" << e.what();
     }
@@ -162,6 +164,8 @@ void cfg::initConfig() {
     qInfo() << "- NBT editor mode:" << cfg::OPEN_NBT_EDITOR_ONLY;
     qInfo() << "- Grid line color:" << cfg::GRID_LINE_COLOR.c_str();
     qInfo() << "- Actor render style: " << cfg::ACTOR_RENDER_STYLE;
+    qInfo() << "- Actor border width: " << cfg::ACTOR_BORDER_WIDTH;
+    qInfo() << "- Actor border color: " << cfg::ACTOR_BORDER_COLOR.c_str();
     qInfo() << "Reading biome and block color table...";
     initColorTable();
 }

@@ -153,6 +153,13 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="print_cache_btn">
+       <property name="text">
+        <string>打印缓存</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
