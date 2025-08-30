@@ -79,3 +79,5 @@ build
 .cache
 logs
 !icon.rc
+build_rls
+*.zip

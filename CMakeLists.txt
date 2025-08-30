@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
 
 
-message(STATUS "QT ROOT is $ENV{QT_ROOT}")
 set(CMAKE_PREFIX_PATH $ENV{QT_ROOT})
+message(STATUS "QT_ROOT environment variable: $ENV{QT_ROOT}")
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
 
 project(BedrockMap VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -42,21 +46,29 @@ file(GLOB_RECURSE SRC_FILES
         src/*.cpp
         src/include/*.h
 )
-
+      
 add_executable(BedrockMap
-        ${SRC_FILES}
-        ${APP_ICON_RESOURCE_WINDOWS}
-        icon.qrc
-)
+                ${SRC_FILES}
+                ${APP_ICON_RESOURCE_WINDOWS}
+                icon.qrc)
 
-target_link_libraries(BedrockMap PRIVATE
+message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
+if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+ message(STATUS "Use no console mode")
+
+ target_link_libraries(BedrockMap PRIVATE
         Qt${QT_VERSION_MAJOR}::Widgets
         Qt${QT_VERSION_MAJOR}::Concurrent
+        -static-libgcc -static-libstdc++
+        -mwindows
+        ${BEDROCK_LIBS}) 
+else()
+  target_link_libraries(BedrockMap PRIVATE
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Concurrent
+        -static-libgcc -static-libstdc++
         ${BEDROCK_LIBS})
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    set_property(TARGET BedrockMap PROPERTY WIN32_EXECUTABLE true)
-endif ()
+endif()
 
 if (QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(BedrockMap)
