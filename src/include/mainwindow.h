@@ -1,3 +1,5 @@
+#include <qwindowdefs.h>
+
 #include <QShortcut>
 #include <vector>
 
@@ -45,6 +47,11 @@ struct GlobalNBTLoadResult {
     bl::general_kv_nbts otherData;
 };
 
+struct VillageDrawInfo {
+    QRect rect;
+    int dim{0};
+};
+
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
@@ -74,7 +81,7 @@ class MainWindow : public QMainWindow {
 
     void handle_level_open_finished();
 
-    inline QMap<QString, QRect> &get_villages() { return this->villages_; }
+    inline QMap<QString, VillageDrawInfo> &get_villages() { return this->villages_; }
 
     void applyFilter();
 
@@ -119,7 +126,7 @@ class MainWindow : public QMainWindow {
 
     void on_global_data_btn_clicked();
 
-    void collect_villages(const std::unordered_map<std::string, std::array<bl::palette::compound_tag *, 4>> &vs);
+    void collect_villages(const bl::village_data::village_table_type &vs);
 
     void on_save_other_btn_clicked();
 
@@ -155,7 +162,7 @@ class MainWindow : public QMainWindow {
     MapItemEditor *map_item_editor_;
 
     // global data
-    QMap<QString, QRect> villages_;
+    QMap<QString, VillageDrawInfo> villages_;
     // filter
     RenderFilterDialog render_filter_dialog_{this};
     LogoPos logoPos{};

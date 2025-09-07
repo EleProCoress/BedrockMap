@@ -40,6 +40,13 @@
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="dump_btn">
+       <property name="text">
+        <string>导出区块数据</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="locate_btn">
        <property name="minimumSize">
         <size>

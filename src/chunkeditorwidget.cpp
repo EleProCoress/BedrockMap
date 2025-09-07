@@ -1,16 +1,28 @@
 #include "chunkeditorwidget.h"
 
+#include <qglobal.h>
+
+#include <QFileDialog>
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QToolTip>
 #include <QtDebug>
 
+#include "bedrock_key.h"
 #include "chunksectionwidget.h"
 #include "mainwindow.h"
 #include "msg.h"
 #include "nbtwidget.h"
+#include "palette.h"
 #include "resourcemanager.h"
 #include "ui_chunkeditorwidget.h"
+
+namespace {
+    bool load_raw(leveldb::DB *&db, const std::string &raw_key, std::string &raw) {
+        auto r = db->Get(leveldb::ReadOptions(), raw_key, &raw);
+        return r.ok();
+    }
+}  // namespace
 
 ChunkEditorWidget::ChunkEditorWidget(MainWindow *mw, QWidget *parent) : QWidget(parent), ui(new Ui::ChunkEditorWidget), mw_(mw) {
     ui->setupUi(this);
@@ -83,8 +95,6 @@ void ChunkEditorWidget::loadChunkData(bl::chunk *chunk) {
 
     this->pending_tick_editor_->loadNewData(pt_items);
     qDebug() << "Load actors";
-
-#include "palette.h"
 
     auto actors = chunk->entities();
     std::vector<NBTListItem *> actor_items;
@@ -191,4 +201,32 @@ void ChunkEditorWidget::on_terrain_level_edit_valueChanged(int arg1) {
     auto y = ui->terrain_level_edit->value();
     this->chunk_section_->setYLevel(y);
     this->chunk_section_->update();
+}
+
+void ChunkEditorWidget::on_dump_btn_clicked() {
+    auto *level_loader = this->mw_->levelLoader();
+    if (!CHECK_CONDITION(level_loader && level_loader->isOpen(), "未打开存档")) return;
+    auto pos = this->cp_;
+    QString dir = QFileDialog::getExistingDirectory(this, "选择导出目录", "", QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+    if (dir.size() == 0) return;
+
+    auto begin = static_cast<int>(bl::chunk_key::Data3D);
+    auto end = static_cast<int>(bl::chunk_key::ActorDigestVersion);
+    qDebug() << "Dump chunk data to " << dir;
+    for (auto i = begin; i <= end; i++) {
+        auto type = static_cast<bl::chunk_key::key_type>(i);
+        if (type == bl::chunk_key::SubChunkTerrain) continue;
+        bl::chunk_key key{type, pos};
+        std::string raw;
+        auto dir_name = bl::chunk_key::chunk_key_to_str(type);
+        if (!load_raw(level_loader->level().db(), key.to_raw(), raw)) continue;
+        qDebug() << " - " << key.to_string().c_str();
+        QFile f(dir + "/" + dir_name.c_str() + ".bin");
+        if (!f.open(QIODevice::WriteOnly)) {
+            WARN("无法打开文件 " + f.fileName());
+            continue;
+        }
+        f.write(raw.data(), static_cast<qint64>(raw.size()));
+        f.close();
+    }
 }

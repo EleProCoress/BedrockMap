@@ -5,9 +5,6 @@
 #include <qwidget.h>
 #include <qwindowdefs.h>
 
-#include <cstddef>
-#include <map>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -43,7 +40,6 @@
 #include <QRgb>
 #include <cmath>
 
-#include "color.h"
 #include "config.h"
 #include "mainwindow.h"
 #include "mapwidget.h"
@@ -394,8 +390,8 @@ void MapWidget::drawVillages(QPaintEvent *event, QPainter *p) {
     auto &vs = this->mw_->get_villages();
     auto [mi, ma, render] = this->getRenderRange(this->camera_);
     for (auto i = vs.cbegin(), end = vs.cend(); i != end; ++i) {
-        //        auto uuid = i.key();
-        auto rect = i.value();
+        if (this->dim_type_ != static_cast<DimType>(i.value().dim)) continue;
+        auto rect = i.value().rect;
         auto min = rect.topLeft();
         auto x = (min.x() - mi.get_min_pos(bl::New).x) * this->BW() + render.x();
         auto z = (min.y() - mi.get_min_pos(bl::New).z) * this->BW() + render.y();

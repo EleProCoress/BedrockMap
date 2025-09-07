@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 
+#include <qdebug.h>
+
 #include <QDesktopServices>
 #include <QDesktopWidget>
 #include <QDialog>
@@ -14,9 +16,11 @@
 #include <QtConcurrent>
 #include <QtDebug>
 #include <exception>
+#include <string>
 
 #include "./ui_mainwindow.h"
 #include "aboutdialog.h"
+#include "global.h"
 #include "mapitemeditor.h"
 #include "mapwidget.h"
 #include "msg.h"
@@ -263,6 +267,7 @@ void MainWindow::openLevel() {
             try {
                 if (cfg::LOAD_GLOBAL_DATA) {
                     this->level_loader_->level().foreach_global_keys([this, &result](const std::string &key, const std::string &value) {
+                        if (key.find("digp") != 0) qDebug() << " - Load global key: " << key.c_str() << " Data[" << value.size() << "]";
                         if (!this->loading_global_data_) {
                             throw std::logic_error("EXIT");  // 手动中止
                         }
@@ -381,16 +386,19 @@ void MainWindow::prepareGlobalData(GlobalNBTLoadResult &res) {
     auto &villData = res.villageData.data();
     this->collect_villages(villData);
     std::vector<NBTListItem *> villNBTList;
-    for (auto &kv : villData) {
-        int index = 0;
-        for (auto &p : kv.second) {
-            if (p) {
-                auto key = kv.first + "_" + bl::village_key::village_key_type_to_str(static_cast<bl::village_key::key_type>(index));
-                auto *item = NBTListItem::from(dynamic_cast<compound_tag *>(p->copy()), key.c_str(), ("VILLAGE_" + key).c_str());
-                item->setIcon(QIcon(QPixmap::fromImage(*VillageNBTIcon(static_cast<bl::village_key::key_type>(index)))));
-                villNBTList.push_back(item);
+
+    for (const auto &dim : villData) {
+        for (const auto &kv : dim) {
+            int index = 0;
+            for (auto &p : kv.second) {
+                if (p) {
+                    auto key = kv.first + "_" + bl::village_key::village_key_type_to_str(static_cast<bl::village_key::key_type>(index));
+                    auto *item = NBTListItem::from(dynamic_cast<compound_tag *>(p->copy()), key.c_str(), ("VILLAGE_" + key).c_str());
+                    item->setIcon(QIcon(QPixmap::fromImage(*VillageNBTIcon(static_cast<bl::village_key::key_type>(index)))));
+                    villNBTList.push_back(item);
+                }
+                index++;
             }
-            index++;
         }
     }
 
@@ -455,19 +463,24 @@ void MainWindow::on_save_other_btn_clicked() {
     this->other_nbt_editor_->clearModifyCache();
 }
 
-void MainWindow::collect_villages(const std::unordered_map<std::string, std::array<bl::palette::compound_tag *, 4>> &vs) {
-    qInfo() << "Collect " << vs.size() << " villages";
-    for (auto kv : vs) {
-        auto *nbt = kv.second[static_cast<int>(bl::village_key::key_type::INFO)];
-        if (!nbt) continue;
-        auto x0 = dynamic_cast<bl::palette::int_tag *>(nbt->get("X0"));
-        auto z0 = dynamic_cast<bl::palette::int_tag *>(nbt->get("Z0"));
-        auto x1 = dynamic_cast<bl::palette::int_tag *>(nbt->get("X1"));
-        auto z1 = dynamic_cast<bl::palette::int_tag *>(nbt->get("Z1"));
-        if (x0 && z0 && x1 && z1) {
-            this->villages_.insert(kv.first.c_str(), QRect(std::min(x0->value, x1->value), std::min(z0->value, z1->value),
-                                                           std::abs(x0->value - x1->value), std::abs(z0->value - z1->value)));
-            qDebug() << x0->value << " " << z0->value << " ~ " << x1->value << " " << z1->value;
+void MainWindow::collect_villages(const bl::village_data::village_table_type &vs) {
+    for (int i = 0; i < vs.size(); i++) {
+        auto &villsInDim = vs[i];
+        qInfo() << "Collect " << vs.size() << " villages " << " in dim " << i;
+        for (auto kv : villsInDim) {
+            auto *nbt = kv.second[static_cast<int>(bl::village_key::key_type::INFO)];
+            if (!nbt) continue;
+            auto x0 = dynamic_cast<bl::palette::int_tag *>(nbt->get("X0"));
+            auto z0 = dynamic_cast<bl::palette::int_tag *>(nbt->get("Z0"));
+            auto x1 = dynamic_cast<bl::palette::int_tag *>(nbt->get("X1"));
+            auto z1 = dynamic_cast<bl::palette::int_tag *>(nbt->get("Z1"));
+            auto rect = QRect(std::min(x0->value, x1->value), std::min(z0->value, z1->value), std::abs(x0->value - x1->value),
+                              std::abs(z0->value - z1->value));
+            if (x0 && z0 && x1 && z1) {
+                this->villages_.insert(kv.first.c_str(), VillageDrawInfo{rect, i});
+                qDebug() << "Village " << kv.first.c_str() << " at [" << (x0 ? x0->value : 0) << ", " << (z0 ? z0->value : 0) << "] ~ ["
+                         << (x1 ? x1->value : 0) << ", " << (z1 ? z1->value : 0) << "]";
+            }
         }
     }
 }

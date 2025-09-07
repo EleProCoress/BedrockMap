@@ -55,7 +55,6 @@ add_executable(BedrockMap
 message(STATUS "Build type: " ${CMAKE_BUILD_TYPE})
 if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
  message(STATUS "Use no console mode")
-
  target_link_libraries(BedrockMap PRIVATE
         Qt${QT_VERSION_MAJOR}::Widgets
         Qt${QT_VERSION_MAJOR}::Concurrent

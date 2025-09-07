@@ -51,6 +51,8 @@ class ChunkEditorWidget : public QWidget {
 
     void on_locate_btn_clicked();
 
+    void on_dump_btn_clicked();
+
    private:
     void refreshBasicData();
 

@@ -96,8 +96,8 @@ NbtWidget::NbtWidget(QWidget *parent) : QWidget(parent), ui(new Ui::NbtWidget) {
 }
 
 void NbtWidget::on_load_btn_clicked() {
-    auto fileName = QFileDialog::getOpenFileName(this, tr("Open File"), R"(C:\Users\xhy\dev\bedrock-level\data\dumps\)",
-                                                 tr("NBT Files (*.nbt  *.nbts *.mcstructure *.palette)"));
+    auto fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QDir::homePath(),
+                                                 tr("NBT Files (*.nbt  *.nbts *.mcstructure *.palette);;All Files (*)"));
     if (fileName.isEmpty()) return;
     auto data = bl::utils::read_file(fileName.toStdString());
     if (data.empty()) {
