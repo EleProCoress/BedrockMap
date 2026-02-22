@@ -16,14 +16,14 @@ class NBTModifyDialog : public QDialog {
 
    public:
     explicit NBTModifyDialog(QWidget *parent = nullptr);
-    bl::palette::abstract_tag *createTagWithCurrent(QString &err);
-    bool modityCurrentTag(bl::palette::abstract_tag *&tag, QString &err);
+    bl::palette::abstract_tag *createTagWithCurrent(QString &err) const;
+    bool modifyCurrentTag(bl::palette::abstract_tag *&tag, QString &err) const;
     ~NBTModifyDialog();
-    bool setCreateMode(bl::palette::abstract_tag *tag);
-    bool setModifyMode(bl::palette::abstract_tag *tag);
+    bool setCreateMode(bl::palette::abstract_tag *tag) const;
+    bool setModifyMode(const bl::palette::abstract_tag *tag) const;
 
    private:
-    void resetUI();
+    void resetUI() const;
     Ui::NBTModifyDialog *ui;
 };
 

@@ -38,8 +38,7 @@ namespace {
             if (!ok) return false;
             auto it = range_map.find(type);
             if (it == range_map.end()) return false;
-            auto &range = it->second;
-            if (value < range.first || value > range.second) return false;
+            if (auto &[fst, snd] = it->second; value < fst || value > snd) return false;
             values.push_back(value);
         }
 
@@ -51,29 +50,26 @@ namespace {
 using namespace bl::palette;
 NBTModifyDialog::NBTModifyDialog(QWidget *parent) : QDialog(parent), ui(new Ui::NBTModifyDialog) {
     ui->setupUi(this);
-    auto begin = static_cast<tag_type>(Byte);
-    auto end = static_cast<tag_type>(LongArray);
-    for (auto i = (int)tag_type::Byte; i <= (int)tag_type::LongArray; i++) {
-        auto type = static_cast<tag_type>(i);
+    for (auto i = static_cast<int>(tag_type::Byte); i <= static_cast<int>(tag_type::LongArray); i++) {
+        const auto type = static_cast<tag_type>(i);
         ui->type_combobox->addItem(tag_type_to_str(type).c_str(), QVariant::fromValue(i));
         ui->type_combobox->setItemIcon(ui->type_combobox->count() - 1, QIcon(QPixmap::fromImage(*TagIcon(type))));
     }
 }
 
-void NBTModifyDialog::resetUI() {
+void NBTModifyDialog::resetUI() const {
     ui->name_lineedit->setEnabled(true);
     ui->value_lineedit->setEnabled(true);
     ui->type_combobox->setEnabled(true);
 }
 
-bool NBTModifyDialog::setCreateMode(bl::palette::abstract_tag *tag) {
+bool NBTModifyDialog::setCreateMode(abstract_tag *tag) const {
     if (!tag) return false;
-    auto type = tag->type();
-    if (type == bl::palette::List) {
-        auto *list = static_cast<list_tag *>(tag);
+    if (const auto type = tag->type(); type == List) {
+        const auto *list = dynamic_cast<list_tag *>(tag);
         if (!list) return false;
         if (!list->value.empty()) {
-            auto child_type = list->value[0]->type();
+            const auto child_type = list->value[0]->type();
             ui->type_combobox->setCurrentText(tag_type_to_str(child_type).c_str());
             ui->type_combobox->setEnabled(false);
             return true;
@@ -83,10 +79,10 @@ bool NBTModifyDialog::setCreateMode(bl::palette::abstract_tag *tag) {
     return true;
 }
 
-bool NBTModifyDialog::setModifyMode(bl::palette::abstract_tag *tag) {
+bool NBTModifyDialog::setModifyMode(const abstract_tag *tag) const {
     if (!tag) return false;
-    auto type = tag->type();
-    if (type == bl::palette::Compound || type == bl::palette::List) {
+    const auto type = tag->type();
+    if (type == Compound || type == List) {
         ui->value_lineedit->setEnabled(false);
     }
     ui->type_combobox->setCurrentText(tag_type_to_str(type).c_str());
@@ -96,21 +92,21 @@ bool NBTModifyDialog::setModifyMode(bl::palette::abstract_tag *tag) {
     return true;
 }
 
-bl::palette::abstract_tag *NBTModifyDialog::createTagWithCurrent(QString &err) {
-    auto name = ui->name_lineedit->text().toStdString();
+bl::palette::abstract_tag *NBTModifyDialog::createTagWithCurrent(QString &err) const {
+    const auto name = ui->name_lineedit->text().toStdString();
     if (name.empty()) {
         err = "TAG名字不能为空";
         return nullptr;
     }
-    auto data = ui->type_combobox->currentData();
+    const auto data = ui->type_combobox->currentData();
     if (!data.canConvert<int>()) {
         err = "TAG类型不合法";
         return nullptr;
     }
 
     bool ok{false};
-    auto type = static_cast<tag_type>(data.value<int>());
-    auto vs = ui->value_lineedit->text().trimmed();
+    const auto type = static_cast<tag_type>(data.value<int>());
+    const auto vs = ui->value_lineedit->text().trimmed();
     if (type == Compound) return new compound_tag(name);
     if (type == String) return new string_tag(name, ui->value_lineedit->text().toStdString());
     if (type == List) return new list_tag(name);
@@ -133,14 +129,14 @@ bl::palette::abstract_tag *NBTModifyDialog::createTagWithCurrent(QString &err) {
         }
         if (type == IntArray) {
             auto *tag = new int_array_tag(name);
-            for (auto &value : values) {
+            for (const auto &value : values) {
                 tag->value.push_back(static_cast<int32_t>(value));
             }
             return tag;
         }
         if (type == LongArray) {
             auto *tag = new long_array_tag(name);
-            for (auto &value : values) {
+            for (const auto &value : values) {
                 tag->value.push_back(static_cast<int64_t>(value));
             }
             return tag;
@@ -148,7 +144,7 @@ bl::palette::abstract_tag *NBTModifyDialog::createTagWithCurrent(QString &err) {
     }
 
     if (type == Float) {
-        auto v = vs.toFloat(&ok);
+        const auto v = vs.toFloat(&ok);
         if (ok) {
             return new float_tag(name, v);
         } else {
@@ -157,23 +153,22 @@ bl::palette::abstract_tag *NBTModifyDialog::createTagWithCurrent(QString &err) {
         }
     }
     if (type == Double) {
-        auto v = vs.toDouble(&ok);
+        const auto v = vs.toDouble(&ok);
         if (ok) {
             return new double_tag(name, v);
-        } else {
-            err = "TAG的值不合法";
-            return nullptr;
         }
+        err = "TAG的值不合法";
+        return nullptr;
     }
 
     err = "未知的TAG类型";
     return nullptr;
 }
 
-bool NBTModifyDialog::modityCurrentTag(bl::palette::abstract_tag *&tag, QString &err) {
+bool NBTModifyDialog::modifyCurrentTag(bl::palette::abstract_tag *&tag, QString &err) const {
     tag->set_key(ui->name_lineedit->text().toStdString());
     auto vs = ui->value_lineedit->text();
-    auto type = tag->type();
+    const auto type = tag->type();
     if (type == Compound || type == List) return true;
     if (type == String) dynamic_cast<string_tag *>(tag)->value = vs.toStdString();
     vs = vs.trimmed();
@@ -195,21 +190,21 @@ bool NBTModifyDialog::modityCurrentTag(bl::palette::abstract_tag *&tag, QString 
         if (type == ByteArray) {
             auto *ba_tag = dynamic_cast<byte_array_tag *>(tag);
             ba_tag->value.clear();
-            for (auto &value : values) {
+            for (const auto &value : values) {
                 ba_tag->value.push_back(static_cast<int8_t>(value));
             }
         }
         if (type == IntArray) {
             auto *ia_tag = dynamic_cast<int_array_tag *>(tag);
             ia_tag->value.clear();
-            for (auto &value : values) {
+            for (const auto &value : values) {
                 ia_tag->value.push_back(static_cast<int32_t>(value));
             }
         }
         if (type == LongArray) {
             auto *la_tag = dynamic_cast<long_array_tag *>(tag);
             la_tag->value.clear();
-            for (auto &value : values) {
+            for (const auto &value : values) {
                 la_tag->value.push_back(static_cast<int64_t>(value));
             }
         }
@@ -217,7 +212,7 @@ bool NBTModifyDialog::modityCurrentTag(bl::palette::abstract_tag *&tag, QString 
     }
     if (type == Float) {
         bool ok;
-        auto v = vs.toFloat(&ok);
+        const auto v = vs.toFloat(&ok);
         if (ok) {
             dynamic_cast<float_tag *>(tag)->value = v;
             return true;
@@ -228,7 +223,7 @@ bool NBTModifyDialog::modityCurrentTag(bl::palette::abstract_tag *&tag, QString 
     }
     if (type == Double) {
         bool ok;
-        auto v = vs.toDouble(&ok);
+        const auto v = vs.toDouble(&ok);
         if (ok) {
             dynamic_cast<double_tag *>(tag)->value = v;
             return true;
@@ -236,6 +231,10 @@ bool NBTModifyDialog::modityCurrentTag(bl::palette::abstract_tag *&tag, QString 
             err = "TAG的值不合法";
             return false;
         }
+    }
+    if (type == String) {
+        dynamic_cast<string_tag *>(tag)->value = vs.toStdString();
+        return true;
     }
     err = "未知的TAG类型";
     return false;

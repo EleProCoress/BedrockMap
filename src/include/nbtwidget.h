@@ -103,15 +103,15 @@ class NbtWidget : public QWidget {
 
     void setExtraLoadEvent(const std::function<void(compound_tag *)> &event) { this->extra_load_event_ = event; }
 
-    void hideLoadDataBtn();
+    void hideLoadDataBtn() const;
 
-    std::string getCurrentPaletteRaw();
+    std::string getCurrentPaletteRaw() const;
 
-    std::vector<compound_tag *> getPaletteCopy();
+    std::vector<compound_tag *> getPaletteCopy() const;
 
-    void foreachItem(const std::function<void(const std::string &label, compound_tag *data)> &func);
+    void foreachItem(const std::function<void(const std::string &label, compound_tag *data)> &func) const;
 
-    void refreshLabel();
+    void refreshLabel() const;
 
     void clearData();
 
@@ -132,10 +132,10 @@ class NbtWidget : public QWidget {
 
     inline bool modifyAllowed() const { return this->modify_allowed_; }
 
-private slots:
+   private slots:
     void on_print_cache_btn_clicked();
 
-private slots:
+   private slots:
 
     void on_load_btn_clicked();
 
@@ -158,7 +158,7 @@ private slots:
     void on_list_widget_itemSelectionChanged();
 
    private:
-    void openNBTItem(bl::palette::compound_tag *root);
+    void openNBTItem(bl::palette::compound_tag *root) const;
 
    private:
     // 不存数据，只引用数据

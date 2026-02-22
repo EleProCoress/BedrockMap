@@ -10,10 +10,8 @@
 #include <chrono>
 #include <filesystem>
 
-#include "asynclevelloader.h"
 #include "config.h"
 #include "mainwindow.h"
-#include "palette.h"
 #include "resourcemanager.h"
 
 QString LOG_FILE_NAME;
