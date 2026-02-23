@@ -21,6 +21,7 @@
 #include "./ui_mainwindow.h"
 #include "aboutdialog.h"
 #include "global.h"
+#include "include/gotopositiondialog.h"
 #include "mapitemeditor.h"
 #include "mapwidget.h"
 #include "msg.h"
@@ -119,12 +120,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->map_item_editor_ = new MapItemEditor(this);
     connect(ui->open_level_btn, &QPushButton::clicked, this, &MainWindow::openLevel);
     connect(&this->render_filter_dialog_, &RenderFilterDialog::accepted, this, &MainWindow::applyFilter);
+
+    // dialog
+    this->about_dialog_ = new AboutDialog(this);
+
     // menu actions
     connect(ui->action_open, SIGNAL(triggered()), this, SLOT(openLevel()));
     connect(ui->action_close, SIGNAL(triggered()), this, SLOT(closeLevel()));
     connect(ui->action_exit, SIGNAL(triggered()), this, SLOT(close_and_exit()));
     connect(ui->action_NBT, SIGNAL(triggered()), this, SLOT(openNBTEditor()));
-    connect(ui->action_about, &QAction::triggered, this, []() { AboutDialog().exec(); });
+    connect(ui->action_about, &QAction::triggered, this, [&]() { about_dialog_->exec(); });
 
     connect(ui->action_settings, &QAction::triggered, this,
             []() { QDesktopServices::openUrl(QUrl::fromLocalFile(cfg::CONFIG_FILE_PATH.c_str())); });
@@ -267,7 +272,6 @@ void MainWindow::openLevel() {
             try {
                 if (cfg::LOAD_GLOBAL_DATA) {
                     this->level_loader_->level().foreach_global_keys([this, &result](const std::string &key, const std::string &value) {
-                        if (key.find("digp") != 0) qDebug() << " - Load global key: " << key.c_str() << " Data[" << value.size() << "]";
                         if (!this->loading_global_data_) {
                             throw std::logic_error("EXIT");  // 手动中止
                         }

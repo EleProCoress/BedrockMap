@@ -6,10 +6,12 @@
 #include <QTimer>
 #include <QWidget>
 #include <QtDebug>
+#include <cstddef>
 #include <tuple>
 
 #include "bedrock_key.h"
 #include "config.h"
+#include "gotopositiondialog.h"
 
 class MainWindow;
 
@@ -28,6 +30,7 @@ class MapWidget : public QWidget {
         setMouseTracking(true);
         this->setContextMenuPolicy(Qt::CustomContextMenu);
         setFocusPolicy(Qt::FocusPolicy::StrongFocus);
+        this->goto_dialog_ = new GoToPositionDialog(this);
     }
 
     void paintEvent(QPaintEvent *event) override;
@@ -185,6 +188,8 @@ class MapWidget : public QWidget {
     //
 
     MainWindow *mw_{nullptr};
+    GoToPositionDialog *goto_dialog_{nullptr};
+
     // render control
     QRect camera_{0, 0, width(), height()};  // 需要绘制的范围，后面设置成和widget等大即可
     DimType dim_type_{DimType::OverWorld};

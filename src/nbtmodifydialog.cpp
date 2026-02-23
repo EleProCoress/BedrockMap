@@ -50,6 +50,7 @@ namespace {
 using namespace bl::palette;
 NBTModifyDialog::NBTModifyDialog(QWidget *parent) : QDialog(parent), ui(new Ui::NBTModifyDialog) {
     ui->setupUi(this);
+    setWindowFlag(Qt::MSWindowsFixedSizeDialogHint);
     for (auto i = static_cast<int>(tag_type::Byte); i <= static_cast<int>(tag_type::LongArray); i++) {
         const auto type = static_cast<tag_type>(i);
         ui->type_combobox->addItem(tag_type_to_str(type).c_str(), QVariant::fromValue(i));
@@ -64,6 +65,7 @@ void NBTModifyDialog::resetUI() const {
 }
 
 bool NBTModifyDialog::setCreateMode(abstract_tag *tag) const {
+    resetUI();
     if (!tag) return false;
     if (const auto type = tag->type(); type == List) {
         const auto *list = dynamic_cast<list_tag *>(tag);
@@ -80,6 +82,7 @@ bool NBTModifyDialog::setCreateMode(abstract_tag *tag) const {
 }
 
 bool NBTModifyDialog::setModifyMode(const abstract_tag *tag) const {
+    resetUI();
     if (!tag) return false;
     const auto type = tag->type();
     if (type == Compound || type == List) {

@@ -3,6 +3,9 @@
 #include <QShortcut>
 #include <vector>
 
+#include "aboutdialog.h"
+#include "gotopositiondialog.h"
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -158,6 +161,9 @@ class MainWindow : public QMainWindow {
     NbtWidget *player_editor_;
     NbtWidget *village_editor_;
     NbtWidget *other_nbt_editor_;
+
+    // Dialog
+    AboutDialog *about_dialog_;
 
     MapItemEditor *map_item_editor_;
 

@@ -10,6 +10,7 @@
 #include <QWidget>
 #include <string>
 
+#include "nbtmodifydialog.h"
 #include "palette.h"
 
 namespace Ui {
@@ -163,6 +164,7 @@ class NbtWidget : public QWidget {
    private:
     // 不存数据，只引用数据
     Ui::NbtWidget *ui;
+    NBTModifyDialog *modify_dialog_{nullptr};
     bool modify_allowed_{false};
     std::function<void(compound_tag *)> extra_load_event_{[](const compound_tag *) {}};
     std::unordered_map<std::string, std::string> modified_cache_;

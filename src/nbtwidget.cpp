@@ -90,6 +90,7 @@ NbtWidget::NbtWidget(QWidget *parent) : QWidget(parent), ui(new Ui::NbtWidget) {
     connect(ui->tree_widget, &QTreeWidget::customContextMenuRequested, this, &NbtWidget::prepareTreeWidgetMenu);
     connect(ui->list_widget, &QListWidget::customContextMenuRequested, this, &NbtWidget::prepareListWidgetMenu);
 
+    modify_dialog_ = new NBTModifyDialog(this);
     this->refreshLabel();
     this->clearModifyCache();
 }
@@ -173,14 +174,13 @@ void NbtWidget::prepareTreeWidgetMenu(const QPoint &pos) {
     QObject::connect(addAction, &QAction::triggered, [this, pos](bool) {
         auto current = dynamic_cast<NBTTreeItem *>(ui->tree_widget->currentItem());
         if (!current) return;
-        NBTModifyDialog dialog(this);
-        if (!dialog.setCreateMode(current->root_)) {
+        if (!modify_dialog_->setCreateMode(current->root_)) {
             WARN("初始化失败");
             return;
         }
-        if (dialog.exec() == QDialog::Accepted) {
+        if (modify_dialog_->exec() == QDialog::Accepted) {
             QString err;
-            auto *tag = dialog.createTagWithCurrent(err);
+            auto *tag = modify_dialog_->createTagWithCurrent(err);
             if (!tag) {
                 WARN("创建节点失败: " + err);
             } else if (!current->tryAddChild(tag)) {
@@ -195,13 +195,12 @@ void NbtWidget::prepareTreeWidgetMenu(const QPoint &pos) {
     QObject::connect(modifyAction, &QAction::triggered, [this, pos](bool) {
         auto current = dynamic_cast<NBTTreeItem *>(ui->tree_widget->currentItem());
         if (!current) return;
-        NBTModifyDialog dialog(this);
-        if (!dialog.setModifyMode(current->root_)) {
+        if (!modify_dialog_->setModifyMode(current->root_)) {
             WARN("初始化失败");
             return;
         }
-        if (dialog.exec() == QDialog::Accepted) {
-            if (QString err; !dialog.modifyCurrentTag(current->root_, err)) {
+        if (modify_dialog_->exec() == QDialog::Accepted) {
+            if (QString err; !modify_dialog_->modifyCurrentTag(current->root_, err)) {
                 WARN("修改节点失败： " + err);
             } else {
                 current->updateLabel();

@@ -9,6 +9,9 @@
 #include <vector>
 
 #include "bedrock_key.h"
+#include "include/gotopositiondialog.h"
+#include "msg.h"
+#include "utils.h"
 
 #ifdef WIN32
 // clang-format off
@@ -533,31 +536,13 @@ void MapWidget::delete_chunks() {
     this->mw_->deleteChunks(bl::chunk_pos(minX, minZ, this->dim_type_), bl::chunk_pos(maxX, maxZ, this->dim_type_));
 }
 
-// https://www.cnblogs.com/grandyang/p/6263929.html
 void MapWidget::gotoPositionAction() {
-    // 后面可能需要两个输入框
-    QDialog dialog(this);
-    dialog.setMinimumWidth(300);
-    dialog.setWindowTitle("前往坐标");
-
-    QFormLayout form(&dialog);
-    auto *x_edit = new QLineEdit(&dialog);
-    auto *z_edit = new QLineEdit(&dialog);
-    x_edit->setText("0");
-    z_edit->setText("0");
-    x_edit->setValidator(new QIntValidator());
-    z_edit->setValidator(new QIntValidator());
-
-    form.addRow(QString("X: "), x_edit);
-    form.addRow(QString("Z: "), z_edit);
-    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal, &dialog);
-    form.addRow(&buttonBox);
-    QObject::connect(&buttonBox, SIGNAL(accepted()), &dialog, SLOT(accept()));
-    QObject::connect(&buttonBox, SIGNAL(rejected()), &dialog, SLOT(reject()));
-    if (dialog.exec() == QDialog::Accepted) {
-        auto x = x_edit->text().toInt();
-        auto z = z_edit->text().toInt();
-        this->gotoBlockPos(x, z);
+    if (this->goto_dialog_->exec() == QDialog::Accepted) {
+        if (this->goto_dialog_->positionValid()) {
+            gotoBlockPos(goto_dialog_->x(), goto_dialog_->z());
+        } else {
+            WARN("无效的坐标");
+        }
     }
 }
 
