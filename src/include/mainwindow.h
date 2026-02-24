@@ -1,10 +1,19 @@
+#include <qboxlayout.h>
+#include <qchar.h>
+#include <qdialog.h>
+#include <qfont.h>
+#include <qlabel.h>
+#include <qwidget.h>
 #include <qwindowdefs.h>
 
 #include <QShortcut>
+#include <cstddef>
+#include <string>
 #include <vector>
 
 #include "aboutdialog.h"
 #include "gotopositiondialog.h"
+#include "leveldb/db.h"
 
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
@@ -12,10 +21,12 @@
 #include <QDialog>
 #include <QFutureWatcher>
 #include <QKeyEvent>
+#include <QLayout>
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QPainter>
 #include <QPushButton>
+#include <QVBoxLayout>
 #include <unordered_map>
 
 #include "asynclevelloader.h"
@@ -53,6 +64,46 @@ struct GlobalNBTLoadResult {
 struct VillageDrawInfo {
     QRect rect;
     int dim{0};
+};
+
+class LevelDBDebugDialog : public QDialog {
+   public:
+    LevelDBDebugDialog(QWidget *widget) : QDialog(widget) {
+        setWindowTitle("LevelDB Stats");
+        setFont(QFont("Consolas"));
+        label = new QLabel(this);
+        layout = new QVBoxLayout(this);
+        layout->addWidget(label);
+
+        this->setLayout(layout);
+    }
+
+    void initData(leveldb::DB *db) {
+        QStringList data;
+        if (db) {
+            uint64_t disk;
+            leveldb::Range range(leveldb::Slice(""), leveldb::Slice("\xff\xff\xff\xff"));
+            db->GetApproximateSizes(&range, 1, &disk);
+            data << QString("Approximate Disk Size:    %1 bytes (%2 MiB)").arg(disk).arg(disk / 1024.0 / 1024.0);
+
+            std::string memStr;
+            db->GetProperty("leveldb.approximate-memory-usage", &memStr);
+            auto mem = QString::fromStdString(memStr).toUInt();
+            data << QString("Approximate Memory Size:  %1 bytes (%2 MiB)").arg(mem).arg(mem / 1024.0 / 1024.0);
+
+            std::string stats;
+            db->GetProperty("leveldb.stats", &stats);
+            data << QString::fromStdString(stats);
+
+        } else {
+            data << "LevelDB not opened";
+        }
+        label->setText(data.join("\n"));
+    }
+
+   private:
+    QLabel *label{nullptr};
+    QVBoxLayout *layout{nullptr};
 };
 
 QT_END_NAMESPACE
@@ -163,7 +214,8 @@ class MainWindow : public QMainWindow {
     NbtWidget *other_nbt_editor_;
 
     // Dialog
-    AboutDialog *about_dialog_;
+    AboutDialog *about_dialog_{nullptr};
+    LevelDBDebugDialog *leveldb_dialog_{nullptr};
 
     MapItemEditor *map_item_editor_;
 

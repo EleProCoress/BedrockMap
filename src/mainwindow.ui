@@ -1037,7 +1037,7 @@ border:none;</string>
      <x>0</x>
      <y>0</y>
      <width>1091</width>
-     <height>21</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="file_menu">
@@ -1053,7 +1053,6 @@ border:none;</string>
      <string>工具</string>
     </property>
     <addaction name="action_modify"/>
-    <addaction name="action_debug"/>
     <addaction name="action_transparent_void"/>
     <addaction name="separator"/>
     <addaction name="action_map_item"/>
@@ -1070,8 +1069,16 @@ border:none;</string>
     <addaction name="separator"/>
     <addaction name="action_about"/>
    </widget>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>开发者</string>
+    </property>
+    <addaction name="action_levelDB"/>
+    <addaction name="action_debug"/>
+   </widget>
    <addaction name="file_menu"/>
    <addaction name="menu_2"/>
+   <addaction name="menu"/>
    <addaction name="menu_3"/>
   </widget>
   <action name="action_open">
@@ -1125,11 +1132,6 @@ border:none;</string>
     <string>修改存档</string>
    </property>
   </action>
-  <action name="action_debug">
-   <property name="text">
-    <string>调试窗口</string>
-   </property>
-  </action>
   <action name="action_map_item">
    <property name="text">
     <string>地图编辑器</string>
@@ -1138,6 +1140,19 @@ border:none;</string>
   <action name="action_transparent_void">
    <property name="text">
     <string>透明虚空</string>
+   </property>
+  </action>
+  <action name="action_levelDB">
+   <property name="text">
+    <string>查看LevelDB数据</string>
+   </property>
+  </action>
+  <action name="action_debug">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>调试窗口</string>
    </property>
   </action>
  </widget>

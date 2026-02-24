@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 
+#include <qaction.h>
 #include <qdebug.h>
 
 #include <QDesktopServices>
@@ -21,7 +22,6 @@
 #include "./ui_mainwindow.h"
 #include "aboutdialog.h"
 #include "global.h"
-#include "include/gotopositiondialog.h"
 #include "mapitemeditor.h"
 #include "mapwidget.h"
 #include "msg.h"
@@ -123,6 +123,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // dialog
     this->about_dialog_ = new AboutDialog(this);
+    this->leveldb_dialog_ = new LevelDBDebugDialog(this);
 
     // menu actions
     connect(ui->action_open, SIGNAL(triggered()), this, SLOT(openLevel()));
@@ -144,14 +145,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         this->write_mode_ = checked;
     });
 
-    // debug
-    ui->action_debug->setCheckable(true);
-    connect(ui->action_debug, &QAction::triggered, this, [this]() {
-        auto checked = this->ui->action_debug->isChecked();
-        this->ui->action_debug->setChecked(checked);
-        this->map_widget_->setDrawDebug(checked);
-    });
-
     // transparent void
     ui->action_transparent_void->setCheckable(true);
     connect(ui->action_transparent_void, &QAction::triggered, this, [this]() {
@@ -160,6 +153,19 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         //        this->map_widget_->setDrawDebug(checked);
         cfg::transparent_void = checked;
         this->level_loader_->clearAllCache();
+    });
+
+    // developer
+    ui->action_debug->setCheckable(true);
+    connect(ui->action_debug, &QAction::triggered, this, [this]() {
+        auto checked = this->ui->action_debug->isChecked();
+        this->ui->action_debug->setChecked(checked);
+        this->map_widget_->setDrawDebug(checked);
+    });
+
+    connect(ui->action_levelDB, &QAction::triggered, this, [this]() {
+        this->leveldb_dialog_->initData(this->level_loader_->level().db());
+        this->leveldb_dialog_->exec();
     });
 
     // watcher
