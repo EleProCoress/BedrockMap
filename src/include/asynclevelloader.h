@@ -101,8 +101,6 @@ class TaskBuffer {
         this->buffer_.erase(t);
     }
 
-    bl::bedrock_level *level() { return this->level_; }
-
     std::mutex mu_;
     std::unordered_set<T> buffer_;
 };

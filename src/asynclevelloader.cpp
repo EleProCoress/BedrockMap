@@ -11,7 +11,9 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
+#include <vector>
 
+#include "bedrock_key.h"
 #include "config.h"
 #include "leveldb/write_batch.h"
 #include "qdebug.h"
@@ -255,12 +257,15 @@ void AsyncLevelLoader::clearAllCache() {
 QFuture<bool> AsyncLevelLoader::dropChunk(const bl::chunk_pos &min, const bl::chunk_pos &max) {
     auto directChunkReader = [&](const bl::chunk_pos &min, const bl::chunk_pos &max) {
         int res = 0;
+    std:;
+        std::set<bl::chunk_pos> positions;
         for (int i = min.x; i <= max.x; i++) {
             for (int j = min.z; j <= max.z; j++) {
                 bl::chunk_pos cp{i, j, min.dim};
-                this->level_.remove_chunk(cp);
+                positions.insert(cp);
             }
         }
+        this->level().remove_chunks(positions);
         return true;
     };
     return QtConcurrent::run(directChunkReader, min, max);
