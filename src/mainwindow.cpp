@@ -18,9 +18,11 @@
 #include <QtDebug>
 #include <exception>
 #include <string>
+#include <vector>
 
 #include "./ui_mainwindow.h"
 #include "aboutdialog.h"
+#include "asynclevelloader.h"
 #include "global.h"
 #include "mapitemeditor.h"
 #include "mapwidget.h"
@@ -29,6 +31,7 @@
 #include "palette.h"
 #include "renderfilterdialog.h"
 #include "resourcemanager.h"
+#include "utils.h"
 
 namespace {
 
@@ -234,23 +237,20 @@ bool MainWindow::openChunkEditor(const bl::chunk_pos &p) {
 }
 
 void MainWindow::openLevel() {
-    // #ifdef  QT_DEBUG
-    //     auto path = QString("D:\\MC\\saves");
-    // #elif
     auto path = QStandardPaths::standardLocations(QStandardPaths::GenericDataLocation)[0] +
                 "/Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState/games/com.mojang/minecraftWorlds";
-    // #endif
     QString root =
         QFileDialog::getExistingDirectory(this, tr("打开存档根目录"), path, QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-    if (root.size() == 0) {
-        return;
-    }
+
+    if (root.isEmpty()) return;
 
     this->closeLevel();
-    qDebug() << "Level root path is " << root;
+    BL_LOGGER("Open Level %s", root.toStdString().c_str());
+
     ui->open_level_btn->setText("正在打开...");
     ui->open_level_btn->setEnabled(false);
     auto res = this->level_loader_->open(root.toStdString());
+
     if (!res) {
         this->level_loader_->close();
         qInfo() << "Can not open level: " << root;
@@ -259,46 +259,32 @@ void MainWindow::openLevel() {
         return;
     }
 
-    // 打开了存档
+    // succeed
     this->setWindowTitle(getStaticTitle());  // 刷新标题
     ui->main_splitter->setVisible(true);     // 显示GUI
     ui->open_level_btn->setVisible(false);   // 隐藏窗口
-    // 设置出生点坐标
+    // set world spawn point
     auto sp = this->level_loader_->level().dat().spawn_position();
     this->map_widget_->gotoBlockPos(sp.x, sp.z);
-    // 写入level.dat数据
+    // load level.dat
     auto *ld = dynamic_cast<bl::palette::compound_tag *>(this->level_loader_->level().dat().root());
     this->level_dat_editor_->loadNewData({NBTListItem::from(dynamic_cast<bl::palette::compound_tag *>(ld->copy()), "level.dat")});
-    qDebug() << "Loading global data in background thread...";
-    // 后台加载全局数据
+    BL_LOGGER("Loading global data in background thread...");
+    // load data in global
+    bool full_loaded{false};
     this->loading_global_data_ = true;
     auto future = QtConcurrent::run(
-        [this](const QString &path) -> bool {
-            auto result = GlobalNBTLoadResult();
+        [this, &full_loaded](const QString &path) {
+            auto result = GlobalNBTLoadResult{};
             try {
                 if (cfg::LOAD_GLOBAL_DATA) {
-                    this->level_loader_->level().foreach_global_keys([this, &result](const std::string &key, const std::string &value) {
-                        if (!this->loading_global_data_) {
-                            throw std::logic_error("EXIT");  // 手动中止
-                        }
-                        if (key.find("player") != std::string::npos) {
-                            result.playerData.append_nbt(key, value);
-                        } else if (key == "portals" || key == "scoreboard" || key == "AutonomousEntities" || key == "BiomeData" ||
-                                   key == "Nether" || key == "Overworld" || key == "TheEnd" || key == "schedulerWT" || key == "mobevents") {
-                            result.otherData.append_nbt(key, value);
-                        } else if (key.find("map_") == 0) {
-                            result.mapData.append_nbt(key, value);
-                        } else {
-                            bl::village_key vk = bl::village_key::parse(key);
-                            if (vk.valid()) result.villageData.append_village(vk, value);
-                        }
-                    });
-                }
-                this->prepareGlobalData(result);
-                return true;
+                    level_loader_->loadGlobalData(result);
+                    full_loaded = true;
+                };
             } catch (std::exception &e) {
-                return false;
             }
+            this->prepareGlobalData(result);
+            return full_loaded;
         },
         root);
     this->load_global_data_watcher_.setFuture(future);
@@ -340,7 +326,6 @@ void MainWindow::openMapItemEditor() {
         WARN("请打开存档且等待全局数据加载完成后再打开");
         return;
     }
-
     const int ext = 100;
     auto g = this->geometry();
     this->map_item_editor_->setGeometry(QRect(g.x() + ext * 2, g.y() + ext, g.width() - ext * 4, g.height() - ext * 2));
@@ -366,8 +351,7 @@ void MainWindow::handle_chunk_delete_finished() {
 }
 
 void MainWindow::prepareGlobalData(GlobalNBTLoadResult &res) {
-    // load players
-    qInfo() << "Loading player data...";
+    BL_LOGGER("Filling player data...");
     auto &playerData = res.playerData.data();
     std::vector<NBTListItem *> playerNBTList;
     for (auto &kv : playerData) {
@@ -375,12 +359,9 @@ void MainWindow::prepareGlobalData(GlobalNBTLoadResult &res) {
         item->setIcon(QIcon(QPixmap::fromImage(*PlayerNBTIcon())));
         playerNBTList.push_back(item);
     }
-
     this->player_editor_->loadNewData(playerNBTList);
-    qInfo() << "Load player data finished";
 
-    // load other items
-    qInfo() << "Loading other data...";
+    BL_LOGGER("Filling other data...");
     auto &otherData = res.otherData.data();
     std::vector<NBTListItem *> otherNBTList;
     for (auto &kv : otherData) {
@@ -389,14 +370,11 @@ void MainWindow::prepareGlobalData(GlobalNBTLoadResult &res) {
         otherNBTList.push_back(item);
     }
     this->other_nbt_editor_->loadNewData(otherNBTList);
-    qInfo() << "Load other data finished";
 
-    // load villages
-    qInfo() << "Loading village data...";
+    BL_ERROR("Filling village data...");
     auto &villData = res.villageData.data();
     this->collect_villages(villData);
     std::vector<NBTListItem *> villNBTList;
-
     for (const auto &dim : villData) {
         for (const auto &kv : dim) {
             int index = 0;
@@ -411,10 +389,9 @@ void MainWindow::prepareGlobalData(GlobalNBTLoadResult &res) {
             }
         }
     }
-
     this->village_editor_->loadNewData(villNBTList);
-    qInfo() << "Load village data finished";
-    // load map data
+
+    BL_LOGGER("Filling map data...");
     this->map_item_editor_->load_map_data(res.mapData);
 }
 
@@ -425,8 +402,8 @@ void MainWindow::handle_level_open_finished() {
             qDebug() << "Stop loading global data (by user)";
             return;
         }
-        qDebug() << "Load global data failed";
-        WARN("无法加载全局NBT数据，但是你仍然可以查看地图和区块数据");
+        qDebug() << "some global data load failed";
+        WARN("部分全局数据加载失败");
     }
     qInfo() << "Load global data finished";
     this->village_editor_->setVisible(true);
@@ -476,7 +453,6 @@ void MainWindow::on_save_other_btn_clicked() {
 void MainWindow::collect_villages(const bl::village_data::village_table_type &vs) {
     for (int i = 0; i < vs.size(); i++) {
         auto &villsInDim = vs[i];
-        qInfo() << "Collect " << vs.size() << " villages " << " in dim " << i;
         for (auto kv : villsInDim) {
             auto *nbt = kv.second[static_cast<int>(bl::village_key::key_type::INFO)];
             if (!nbt) continue;
@@ -488,8 +464,6 @@ void MainWindow::collect_villages(const bl::village_data::village_table_type &vs
                               std::abs(z0->value - z1->value));
             if (x0 && z0 && x1 && z1) {
                 this->villages_.insert(kv.first.c_str(), VillageDrawInfo{rect, i});
-                qDebug() << "Village " << kv.first.c_str() << " at [" << (x0 ? x0->value : 0) << ", " << (z0 ? z0->value : 0) << "] ~ ["
-                         << (x1 ? x1->value : 0) << ", " << (z1 ? z1->value : 0) << "]";
             }
         }
     }

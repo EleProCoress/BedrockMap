@@ -1,0 +1,52 @@
+#ifndef MAP_TILE_H
+#define MAP_TILE_H
+#include <qcolor.h>
+#include <qimage.h>
+
+#include <QImage>
+#include <bitset>
+
+#include "config.h"
+
+// map tile, to fill the mapview
+class MapTile {
+   public:
+    MapTile() = delete;
+    // create a chessboard image(witdt * scale)^2 with color c1 and c2
+    static QImage createQuadChessTile(int width, const QColor &c1, const QColor &c2, int scale = 1);
+
+    // create a tile according to the bit map
+    template <size_t W>
+    static QImage createBitMapTile(std::bitset<W * W> chunk_bit_map, const QColor &c0, const QColor &c1, int scale = 1) {
+        int scaledWidth = W * scale;
+        QImage image(scaledWidth, scaledWidth, QImage::Format_RGB32);
+
+        QRgb color0 = c0.rgb();
+        QRgb color1 = c1.rgb();
+
+        std::vector<int> rowBits(scaledWidth);
+        for (int y = 0; y < scaledWidth; ++y) {
+            rowBits[y] = (y / scale) * W;
+        }
+
+        for (int y = 0; y < scaledWidth; ++y) {
+            QRgb *line = reinterpret_cast<QRgb *>(image.scanLine(y));
+            int rowStart = rowBits[y];
+            for (int x = 0; x < scaledWidth; ++x) {
+                int bitIndex = rowStart + (x / scale);
+                line[x] = chunk_bit_map[bitIndex] ? color1 : color0;
+            }
+        }
+        return image;
+    }
+
+   public:
+    // region that are not loaed
+    static QImage &UNLOADED_REGION_TILE();
+    // reegion that are loaded but have no valid chunk
+    static QImage &NULL_REGION_TILE();
+
+    static QImage CREATE_REGION_TILE(std::bitset<cfg::RW * cfg::RW> chunk_bit_map, bool fillChunk);
+};
+
+#endif

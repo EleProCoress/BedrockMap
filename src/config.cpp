@@ -3,7 +3,10 @@
 //
 #include "config.h"
 
+#include <qcolor.h>
 #include <qglobal.h>
+#include <qimage.h>
+#include <qnamespace.h>
 #include <qnumeric.h>
 
 #include <QDir>
@@ -14,20 +17,14 @@
 #include "color.h"
 #include "json/json.hpp"
 
-namespace {
-
-    //    QImage *bg_{nullptr};
-    QImage *unloaded_region_image_{nullptr};  // 未加载的区域
-    QImage *null_region_image_{nullptr};      // 确定没有有效区块的空区域
-    //    QImage *transparent_region_img_{nullptr};
-}  // namespace
-
-// 软件基本信息
+// Base info
 const std::string cfg::SOFTWARE_NAME = "BedrockMap";
 const std::string cfg::SOFTWARE_VERSION = "v0.5.0";
-// 不可配置的
+
+// Unconfigurable
 const int cfg::GRID_WIDTH = 32;
-// 配置文件下面是可配置的(都有默认值)
+
+// Configurable
 int cfg::SHADOW_LEVEL = 128;
 float cfg::ZOOM_SPEED = 1.2;
 int cfg::THREAD_NUM = 8;
@@ -44,7 +41,7 @@ std::string cfg::GRID_LINE_COLOR = "#bbbbbb";
 int cfg::ACTOR_RENDER_STYLE = 0;  // 0: 渲染每一个实体；1:一个区块内每种实体仅渲染一次
 int cfg::ACTOR_BORDER_WIDTH = 2;  // 图标边框宽度
 std::string cfg::ACTOR_BORDER_COLOR = "#ff000000";
-// 运行时可变的
+
 bool cfg::transparent_void = false;
 
 // 三个重要文件的路径，直接内置
@@ -72,47 +69,7 @@ void cfg::initColorTable() {
     if (!bl::init_block_color_palette_from_file(cfg::BLOCK_FILE_PATH)) {
         qWarning() << "Can not load block color file in path: " << BLOCK_FILE_PATH.c_str();
     }
-
-    // init image
-
-    unloaded_region_image_ = new QImage(cfg::RW << 4, cfg::RW << 4, QImage::Format_RGB888);
-    null_region_image_ = new QImage(cfg::RW << 4, cfg::RW << 4, QImage::Format_RGBA8888);
-    //    default_region_image_ = new QImage(cfg::RW << 4, cfg::RW << 4, QImage::Format_RGB888);
-    const int BW = cfg::RW << 4;
-    for (int i = 0; i < BW; i++) {
-        for (int j = 0; j < BW; j++) {
-            const int arr1[2]{128, 148};
-            const int arr2[2]{20, 40};
-
-            const int idx = (i / (cfg::RW * 8) + j / (cfg::RW * 8)) % 2;
-            assert(unloaded_region_image_);
-            unloaded_region_image_->setPixelColor(i, j, QColor(arr1[idx], arr1[idx], arr1[idx]));
-            null_region_image_->setPixelColor(i, j, QColor(arr2[idx], arr2[idx], arr2[idx]));
-
-            //            default_region_image_->setPixelColor(i, j, QColor(255 - arr2[idx], 255 - arr2[idx], 255 - arr2[idx]));
-        }
-    }
-
-    //    bg_ = new QImage(8, 8, QImage::Format_RGBA8888);
-    //    bg_->fill(QColor(0, 0, 0, 0));
-    //    std::vector<std::string> fills{
-    //            "XXXXXXXX",  //
-    //            "XXXXXXXX",  //
-    //            "X  XX  X",  //
-    //            "X  XX  X",  //
-    //            "XXX  XXX",  //
-    //            "XX    XX",  //
-    //            "XX    XX",  //
-    //            "XX XX XX",  //
-    //    };
-    //    for (int i = 0; i < 8; i++) {
-    //        for (int j = 0; j < 8; j++) {
-    //            if (fills[i][j] == ' ') bg_->setPixelColor(i, j, QColor(31, 138, 112, 160));
-    //        }
-    //    }
 }
-
-#include <bitset>
 
 void cfg::initConfig() {
     qInfo() << "Current working directory: " << QDir::currentPath();
@@ -171,26 +128,3 @@ void cfg::initConfig() {
 }
 
 QString cfg::VERSION_STRING() { return QString(cfg::SOFTWARE_NAME.c_str()) + " " + QString(cfg::SOFTWARE_VERSION.c_str()); }
-
-// QImage *cfg::EMPTY_REGION_IMAGE() { return transparent_region_img_; }
-
-QImage *cfg::NULL_REGION_IMAGE() { return null_region_image_; }
-
-QImage cfg::CREATE_REGION_IMG(const std::bitset<cfg::RW * cfg::RW> &bitmap) {
-    auto res = QImage(cfg::RW << 4, cfg::RW << 4, QImage::Format_RGB888);
-    const int BW = cfg::RW << 4;
-    for (int i = 0; i < BW; i++) {
-        for (int j = 0; j < BW; j++) {
-            const int arr[2]{20, 40};
-            const int idx = (i / (cfg::RW << 3) + j / (cfg::RW << 3)) % 2;
-            if (bitmap[(i >> 4) * cfg::RW + (j >> 4)] && (!cfg::transparent_void)) {
-                res.setPixelColor(i, j, QColor(255 - arr[idx], 255 - arr[idx], 255 - arr[idx]));
-            } else {
-                res.setPixelColor(i, j, QColor(arr[idx], arr[idx], arr[idx]));
-            }
-        }
-    }
-    return res;
-}
-
-QImage *cfg::UNLOADED_REGION_IMAGE() { return unloaded_region_image_; }

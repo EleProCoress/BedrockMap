@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <qimage.h>
+
 #include <QColor>
 #include <QImage>
 #include <bitset>
@@ -12,20 +14,21 @@
 typedef bl::chunk_pos region_pos;
 
 struct cfg {
-    // 软件基本信息
+    // base info
     const static std::string SOFTWARE_NAME;
     const static std::string SOFTWARE_VERSION;
 
-    // 不可配置的
+    // Unconfigurable
+
     // 配置文件
     const static std::string CONFIG_FILE_PATH;  // 配置文件路径
     // 颜色表文件路径
     const static std::string BLOCK_FILE_PATH;
     const static std::string BIOME_FILE_PATH;
     static constexpr uint8_t RW = 8u;  //(1<<w) //区域d大小,一个区域由RW * RW个区块组成，且区块坐标对齐8的倍速
+    const static int GRID_WIDTH;       // 地区格子宽度(单位是区块)
 
-    const static int GRID_WIDTH;  // 地区格子宽度(单位是区块)
-    // 可配置的
+    // Configurable
     static int SHADOW_LEVEL;                // 地形图的阴影等级
     static float ZOOM_SPEED;                // 滚轮缩放苏晒
     static int THREAD_NUM;                  // 后台线程数
@@ -42,8 +45,6 @@ struct cfg {
     static int ACTOR_RENDER_STYLE;          // 实体渲染风格
     static int ACTOR_BORDER_WIDTH;          // 图标边框宽度
     static std::string ACTOR_BORDER_COLOR;  // 图标边框颜色
-
-    // 运行时配置
     static bool transparent_void;
 
     static region_pos c2r(const bl::chunk_pos &ch);
@@ -51,14 +52,6 @@ struct cfg {
     static void initColorTable();
 
     static void initConfig();
-
-    static QImage CREATE_REGION_IMG(const std::bitset<cfg::RW * cfg::RW> &bitmap);
-
-    static QImage *UNLOADED_REGION_IMAGE();
-
-    static QImage *NULL_REGION_IMAGE();
-
-    //    static QImage *EMPTY_REGION_IMAGE();
 
     static QString VERSION_STRING();
 };

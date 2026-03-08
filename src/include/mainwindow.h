@@ -1,3 +1,5 @@
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
 #include <qboxlayout.h>
 #include <qchar.h>
 #include <qdialog.h>
@@ -5,18 +7,6 @@
 #include <qlabel.h>
 #include <qwidget.h>
 #include <qwindowdefs.h>
-
-#include <QShortcut>
-#include <cstddef>
-#include <string>
-#include <vector>
-
-#include "aboutdialog.h"
-#include "gotopositiondialog.h"
-#include "leveldb/db.h"
-
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
 
 #include <QDialog>
 #include <QFutureWatcher>
@@ -26,11 +16,17 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPushButton>
+#include <QShortcut>
 #include <QVBoxLayout>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
+#include "aboutdialog.h"
 #include "asynclevelloader.h"
 #include "chunkeditorwidget.h"
+#include "leveldb/db.h"
+#include "leveldb/env.h"
 #include "mapitemeditor.h"
 #include "mapwidget.h"
 #include "nbtwidget.h"
@@ -54,13 +50,6 @@ struct LogoPos {
     }
 };
 
-struct GlobalNBTLoadResult {
-    bl::village_data villageData;
-    bl::general_kv_nbts playerData;
-    bl::general_kv_nbts mapData;
-    bl::general_kv_nbts otherData;
-};
-
 struct VillageDrawInfo {
     QRect rect;
     int dim{0};
@@ -81,6 +70,8 @@ class LevelDBDebugDialog : public QDialog {
     void initData(leveldb::DB *db) {
         QStringList data;
         if (db) {
+            data << QString("Last Sequence Number:     %1").arg(db->LastSequence());
+
             uint64_t disk;
             leveldb::Range range(leveldb::Slice(""), leveldb::Slice("\xff\xff\xff\xff"));
             db->GetApproximateSizes(&range, 1, &disk);
@@ -94,7 +85,6 @@ class LevelDBDebugDialog : public QDialog {
             std::string stats;
             db->GetProperty("leveldb.stats", &stats);
             data << QString::fromStdString(stats);
-
         } else {
             data << "LevelDB not opened";
         }

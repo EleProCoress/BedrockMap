@@ -11,6 +11,7 @@
 #include <filesystem>
 
 #include "config.h"
+#include "include/maptile.h"
 #include "mainwindow.h"
 #include "resourcemanager.h"
 
@@ -76,7 +77,6 @@ void setupFont(QApplication &a) {
 }
 
 int main(int argc, char *argv[]) {
-    setupLog();
 #ifndef QT_DEBUG
     qInstallMessageHandler(myMessageHandler);
 #endif

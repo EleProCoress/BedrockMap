@@ -24,8 +24,8 @@ set(BEDROCK_LEVEL_ROOT "${PROJECT_SOURCE_DIR}/bedrock-level")
 
 set(BEDROCK_LIBS
         ${BEDROCK_LEVEL_ROOT}/build/libbedrock-level.a
-        ${BEDROCK_LEVEL_ROOT}/libs/libleveldb-mingw64.a
-        ${BEDROCK_LEVEL_ROOT}/libs/libz-mingw64.a
+        ${BEDROCK_LEVEL_ROOT}/libs/libleveldb.a
+        ${BEDROCK_LEVEL_ROOT}/libs/libzs.a
 )
 
 include_directories(
