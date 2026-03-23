@@ -9,6 +9,6 @@ Minecraft基岩版地图预览与编辑器。
 ## 编译
 [编译指南](./docs/complie_guide.md)
 
-## License
+## 许可证
 
 AGPL 
